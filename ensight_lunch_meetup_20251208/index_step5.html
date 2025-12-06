@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏇 경마 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #FFD700;
+            margin: 10px 0;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            font-size: 2.5rem;
+            letter-spacing: 3px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+
+        /* 스탯 카드 섹션 */
+        #horseCards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            max-width: 1400px;
+        }
+
+        .horse-card {
+            background: linear-gradient(145deg, #1e293b, #334155);
+            border-radius: 15px;
+            width: 170px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .horse-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .horse-card.selected {
+            border: 3px solid #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+        }
+
+        .card-header {
+            padding: 10px;
+            text-align: center;
+            position: relative;
+        }
+
+        .horse-emoji {
+            font-size: 1.8rem;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .horse-name {
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .card-odds {
+            background: rgba(0,0,0,0.3);
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: #fbbf24;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .card-body {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            gap: 5px;
+        }
+
+        .stat-icon {
+            font-size: 0.8rem;
+            width: 16px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.65rem;
+            width: 45px;
+        }
+
+        .stat-bar-container {
+            flex: 1;
+            height: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stat-bar {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        .stat-bar.speed { background: linear-gradient(90deg, #f97316, #fb923c); }
+        .stat-bar.stamina { background: linear-gradient(90deg, #22c55e, #4ade80); }
+        .stat-bar.luck { background: linear-gradient(90deg, #a855f7, #c084fc); }
+
+        .stat-value {
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+            width: 16px;
+            text-align: right;
+        }
+
+        .total-stats {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.7rem;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* 베팅 패널 */
+        .betting-panel {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 20px;
+            padding: 25px;
+            width: 95%;
+            max-width: 800px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .betting-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .betting-header h2 {
+            color: #fbbf24;
+            font-size: 1.5rem;
+        }
+
+        .betting-form {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .betting-form input, .betting-form select {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            color: white;
+            font-size: 1rem;
+        }
+
+        .betting-form input::placeholder {
+            color: #64748b;
+        }
+
+        .betting-form input:focus, .betting-form select:focus {
+            outline: none;
+            border-color: #fbbf24;
+        }
+
+        #nicknameInput { width: 150px; }
+        #horseSelect { width: 140px; }
+        #betAmount { width: 120px; }
+
+        .add-bet-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .add-bet-btn:hover {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            transform: translateY(-2px);
+        }
+
+        /* 베팅 목록 */
+        .bet-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .bet-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .bet-list th, .bet-list td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .bet-list th {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .bet-list td {
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .bet-list .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .no-bets {
+            text-align: center;
+            color: #64748b;
+            padding: 30px;
+        }
+
+        /* 버튼 */
+        .start-race-btn {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(249, 115, 22, 0.4);
+            transition: all 0.3s;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .start-race-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ea580c, #c2410c);
+            transform: translateY(-3px);
+        }
+
+        .start-race-btn:disabled {
+            background: linear-gradient(135deg, #475569, #64748b);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* 레이스 컨테이너 */
+        .race-container {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            width: 95%;
+            max-width: 1200px;
+        }
+
+        .race-container.active {
+            display: flex;
+        }
+
+        .race-container.shaking {
+            animation: screenShake 0.1s ease-in-out infinite;
+        }
+
+        @keyframes screenShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px) rotate(-0.5deg); }
+            75% { transform: translateX(3px) rotate(0.5deg); }
+        }
+
+        /* 레이스 트랙 */
+        #raceTrack {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 20px;
+            padding: 20px 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .track {
+            position: relative;
+            height: 55px;
+            margin: 8px 0;
+            background: linear-gradient(to right, #374151 0%, #374151 90%, #fbbf24 90%, #fbbf24 100%);
+            border: 2px solid #4b5563;
+            border-radius: 10px;
+            overflow: visible;
+        }
+
+        .track::after {
+            content: '🏁';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.4rem;
+        }
+
+        .horse {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+            border: 3px solid rgba(255,255,255,0.3);
+            z-index: 5;
+        }
+
+        .horse-info {
+            position: absolute;
+            left: 55px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 5;
+        }
+
+        .horse-label {
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .track-number {
+            position: absolute;
+            left: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* 이펙트 */
+        .dust-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, rgba(139, 119, 101, 0.8), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            animation: dustFade 0.5s ease-out forwards;
+        }
+
+        @keyframes dustFade {
+            0% { opacity: 1; transform: scale(1) translateX(0); }
+            100% { opacity: 0; transform: scale(0.3) translateX(-20px); }
+        }
+
+        .boost-effect {
+            position: absolute;
+            font-size: 1.5rem;
+            pointer-events: none;
+            z-index: 10;
+            animation: boostPop 0.4s ease-out forwards;
+        }
+
+        @keyframes boostPop {
+            0% { opacity: 1; transform: scale(0.5) translateY(0); }
+            100% { opacity: 0; transform: scale(1) translateY(-25px); }
+        }
+
+        .overtake-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8), 2px 2px 0 #000;
+            pointer-events: none;
+            z-index: 100;
+            animation: overtakePop 0.6s ease-out forwards;
+        }
+
+        @keyframes overtakePop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) translateY(-40px); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            z-index: 200;
+            animation: confettiFall 3s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* 결과 오버레이 */
+        .result-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 150;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .result-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .result-modal {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(251, 191, 36, 0.5);
+            animation: modalSlideUp 0.5s ease-out;
+        }
+
+        @keyframes modalSlideUp {
+            0% { transform: translateY(50px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .result-header h2 {
+            color: #FFD700;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .winner-info {
+            background: rgba(251, 191, 36, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .winner-info .emoji {
+            font-size: 3rem;
+        }
+
+        .winner-info .name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .result-table th, .result-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .result-table th {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .result-table td {
+            color: white;
+        }
+
+        .result-table .win {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .result-table .lose {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .result-table .win-text {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .result-table .lose-text {
+            color: #ef4444;
+        }
+
+        .result-table .points-gain {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
+        .result-table .points-loss {
+            color: #ef4444;
+        }
+
+        .next-race-btn {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+            transition: all 0.3s;
+        }
+
+        .next-race-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 애니메이션 */
+        @keyframes celebrate {
+            0%, 100% { transform: translateY(-50%) scale(1) rotate(0deg); }
+            50% { transform: translateY(-50%) scale(1.2) rotate(5deg); }
+        }
+
+        @keyframes boost {
+            0%, 100% { box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); }
+        }
+
+        .winner { animation: celebrate 0.4s ease-in-out infinite; }
+        .boosted { animation: boost 0.3s ease-in-out; }
+
+        .footer {
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            #horseCards { gap: 8px; }
+            .horse-card { width: 140px; }
+            .betting-form { flex-direction: column; align-items: stretch; }
+            .betting-form input, .betting-form select { width: 100%; }
+            .result-modal { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏇 경마 게임</h1>
+        <p class="subtitle">말을 선택하고 베팅하세요! 🎰</p>
+    </div>
+
+    <div id="horseCards"></div>
+
+    <!-- 베팅 패널 -->
+    <div class="betting-panel" id="bettingPanel">
+        <div class="betting-header">
+            <h2>🎰 베팅하기</h2>
+        </div>
+        
+        <div class="betting-form">
+            <input type="text" id="nicknameInput" placeholder="닉네임" maxlength="10">
+            <select id="horseSelect">
+                <option value="">말 선택...</option>
+            </select>
+            <input type="number" id="betAmount" placeholder="포인트" min="10" max="1000" value="100">
+            <button class="add-bet-btn" id="addBetBtn">➕ 베팅 추가</button>
+        </div>
+
+        <div class="bet-list" id="betList">
+            <div class="no-bets">베팅을 추가해주세요</div>
+        </div>
+
+        <button class="start-race-btn" id="startRaceBtn" disabled>🏁 경기 시작</button>
+    </div>
+
+    <!-- 레이스 컨테이너 -->
+    <div class="race-container" id="raceContainer">
+        <div id="raceTrack"></div>
+    </div>
+
+    <!-- 결과 오버레이 -->
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-modal">
+            <div class="result-header">
+                <h2>📊 경기 결과</h2>
+            </div>
+            <div class="winner-info" id="winnerInfo">
+                <div class="emoji">🏇</div>
+                <div class="name" id="resultWinnerName">Thunder</div>
+            </div>
+            <table class="result-table" id="resultTable">
+                <thead>
+                    <tr>
+                        <th>닉네임</th>
+                        <th>선택</th>
+                        <th>결과</th>
+                        <th>포인트</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTableBody"></tbody>
+            </table>
+            <button class="next-race-btn" id="nextRaceBtn">🔄 다음 경기</button>
+        </div>
+    </div>
+
+    <p class="footer">⚡ Speed | 💪 Stamina | 🍀 Luck | 총합 20~27 밸런스</p>
+
+    <script>
+        // 말 템플릿
+        const horseTemplates = [
+            { name: 'Thunder', color: '#ef4444', emoji: '🏇' },
+            { name: 'Lightning', color: '#3b82f6', emoji: '🏇' },
+            { name: 'Storm', color: '#22c55e', emoji: '🏇' },
+            { name: 'Flash', color: '#f59e0b', emoji: '🏇' },
+            { name: 'Bolt', color: '#a855f7', emoji: '🏇' }
+        ];
+
+        // 밸런스된 스탯 생성 (총합 20~27)
+        function generateBalancedStats() {
+            const targetTotal = Math.floor(Math.random() * 8) + 20;
+            let stats = { speed: 0, stamina: 0, luck: 0 };
+            let remaining = targetTotal;
+            
+            stats.speed = Math.min(10, Math.max(3, Math.floor(Math.random() * 8) + 3));
+            remaining -= stats.speed;
+            
+            stats.stamina = Math.min(10, Math.max(3, Math.min(remaining - 3, Math.floor(Math.random() * 6) + 3)));
+            remaining -= stats.stamina;
+            
+            stats.luck = Math.min(10, Math.max(3, remaining));
+            
+            return stats;
+        }
+
+        // 배당률 계산
+        function calculateOdds(totalStats) {
+            const ratio = (27 - totalStats) / 7;
+            return (1.5 + ratio * 3.5).toFixed(1);
+        }
+
+        // 말 객체 생성
+        let horses = [];
+        function initializeHorses() {
+            horses = horseTemplates.map((template, index) => {
+                const stats = generateBalancedStats();
+                const totalStats = stats.speed + stats.stamina + stats.luck;
+                return {
+                    id: `horse${index + 1}`,
+                    name: template.name,
+                    color: template.color,
+                    emoji: template.emoji,
+                    stats: stats,
+                    totalStats: totalStats,
+                    odds: calculateOdds(totalStats),
+                    position: 0,
+                    element: null,
+                    previousRank: index + 1
+                };
+            });
+        }
+
+        // 베팅 데이터
+        let bets = [];
+        let players = {};
+
+        // localStorage에서 플레이어 로드
+        function loadPlayers() {
+            const saved = localStorage.getItem('horseRacePlayers');
+            players = saved ? JSON.parse(saved) : {};
+        }
+
+        // localStorage에 플레이어 저장
+        function savePlayers() {
+            localStorage.setItem('horseRacePlayers', JSON.stringify(players));
+        }
+
+        // 플레이어 포인트 가져오기 (없으면 1000P 부여)
+        function getPlayerPoints(nickname) {
+            if (!players[nickname]) {
+                players[nickname] = { points: 1000 };
+                savePlayers();
+            }
+            return players[nickname].points;
+        }
+
+        // DOM 요소
+        const horseCardsContainer = document.getElementById('horseCards');
+        const bettingPanel = document.getElementById('bettingPanel');
+        const raceContainer = document.getElementById('raceContainer');
+        const raceTrackContainer = document.getElementById('raceTrack');
+        const resultOverlay = document.getElementById('resultOverlay');
+        const nicknameInput = document.getElementById('nicknameInput');
+        const horseSelect = document.getElementById('horseSelect');
+        const betAmount = document.getElementById('betAmount');
+        const addBetBtn = document.getElementById('addBetBtn');
+        const startRaceBtn = document.getElementById('startRaceBtn');
+        const betListContainer = document.getElementById('betList');
+        const nextRaceBtn = document.getElementById('nextRaceBtn');
+
+        let raceInterval = null;
+        let raceFinished = false;
+        let dustInterval = null;
+        let slowMotionActive = false;
+        let previousLeader = null;
+        let audioContext = null;
+        let winnerHorse = null;
+
+        // 오디오 초기화
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // 효과음
+        function playSound(type) {
+            if (!audioContext) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'boost':
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.15);
+                    break;
+                case 'winner':
+                    [523, 659, 784].forEach((freq, i) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.2, audioContext.currentTime + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.3);
+                        osc.start(audioContext.currentTime + i * 0.15);
+                        osc.stop(audioContext.currentTime + i * 0.15 + 0.3);
+                    });
+                    break;
+            }
+        }
+
+        // 말 카드 생성
+        function createHorseCards() {
+            horseCardsContainer.innerHTML = horses.map(horse => `
+                <div class="horse-card" data-horse-id="${horse.id}" onclick="selectHorseCard('${horse.id}')">
+                    <div class="card-header" style="background: ${horse.color};">
+                        <span class="horse-emoji">${horse.emoji}</span>
+                        <span class="horse-name">${horse.name}</span>
+                        <span class="card-odds">x${horse.odds}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="stat-row">
+                            <span class="stat-icon">⚡</span>
+                            <span class="stat-label">Speed</span>
+                            <div class="stat-bar-container">
+                                <div class="stat-bar speed" style="width: ${horse.stats.speed * 10}%;"></div>
+                            </div>
+                            <span class="stat-value">${horse.stats.speed}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-icon">💪</span>
+                            <span class="stat-label">Stamina</span>
+                            <div class="stat-bar-container">
+                                <div class="stat-bar stamina" style="width: ${horse.stats.stamina * 10}%;"></div>
+                            </div>
+                            <span class="stat-value">${horse.stats.stamina}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-icon">🍀</span>
+                            <span class="stat-label">Luck</span>
+                            <div class="stat-bar-container">
+                                <div class="stat-bar luck" style="width: ${horse.stats.luck * 10}%;"></div>
+                            </div>
+                            <span class="stat-value">${horse.stats.luck}</span>
+                        </div>
+                        <div class="total-stats">총합: ${horse.totalStats}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 말 선택 드롭다운 업데이트
+            horseSelect.innerHTML = '<option value="">말 선택...</option>' + 
+                horses.map(h => `<option value="${h.id}">${h.name} (x${h.odds})</option>`).join('');
+        }
+
+        // 말 카드 선택
+        function selectHorseCard(horseId) {
+            document.querySelectorAll('.horse-card').forEach(card => card.classList.remove('selected'));
+            document.querySelector(`[data-horse-id="${horseId}"]`).classList.add('selected');
+            horseSelect.value = horseId;
+        }
+
+        // 베팅 목록 업데이트
+        function updateBetList() {
+            if (bets.length === 0) {
+                betListContainer.innerHTML = '<div class="no-bets">베팅을 추가해주세요</div>';
+                startRaceBtn.disabled = true;
+                return;
+            }
+
+            betListContainer.innerHTML = `
+                <table>
+                    <tr><th>닉네임</th><th>선택</th><th>포인트</th><th>예상 배당</th><th></th></tr>
+                    ${bets.map((bet, index) => {
+                        const horse = horses.find(h => h.id === bet.horseId);
+                        const expectedWin = Math.floor(bet.amount * horse.odds);
+                        return `
+                            <tr>
+                                <td>${bet.nickname}</td>
+                                <td style="color: ${horse.color};">${horse.name}</td>
+                                <td>${bet.amount}P</td>
+                                <td style="color: #22c55e;">+${expectedWin}P</td>
+                                <td><button class="delete-btn" onclick="removeBet(${index})">✕</button></td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </table>
+            `;
+            startRaceBtn.disabled = false;
+        }
+
+        // 베팅 추가
+        function addBet() {
+            const nickname = nicknameInput.value.trim();
+            const horseId = horseSelect.value;
+            const amount = parseInt(betAmount.value);
+
+            if (!nickname) {
+                alert('닉네임을 입력해주세요!');
+                return;
+            }
+            if (!horseId) {
+                alert('말을 선택해주세요!');
+                return;
+            }
+            if (!amount || amount < 10) {
+                alert('최소 10P 이상 베팅해주세요!');
+                return;
+            }
+
+            const playerPoints = getPlayerPoints(nickname);
+            if (amount > playerPoints) {
+                alert(`포인트가 부족합니다! (보유: ${playerPoints}P)`);
+                return;
+            }
+
+            // 같은 닉네임 중복 체크
+            if (bets.find(b => b.nickname === nickname)) {
+                alert('이미 베팅한 닉네임입니다!');
+                return;
+            }
+
+            bets.push({ nickname, horseId, amount });
+            updateBetList();
+            nicknameInput.value = '';
+            horseSelect.value = '';
+            document.querySelectorAll('.horse-card').forEach(card => card.classList.remove('selected'));
+        }
+
+        // 베팅 삭제
+        function removeBet(index) {
+            bets.splice(index, 1);
+            updateBetList();
+        }
+
+        // 레이스 트랙 생성
+        function createRaceTrack() {
+            raceTrackContainer.innerHTML = horses.map((horse, index) => `
+                <div class="track" id="track${index + 1}">
+                    <span class="track-number">${index + 1}</span>
+                    <div class="horse" id="${horse.id}" style="background-color: ${horse.color};">${horse.emoji}</div>
+                    <div class="horse-info">
+                        <span class="horse-label">${horse.name}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            horses.forEach(horse => {
+                horse.element = document.getElementById(horse.id);
+            });
+        }
+
+        // 먼지 파티클
+        function createDustParticles(horse) {
+            if (raceFinished) return;
+            const track = horse.element.parentElement;
+            const dust = document.createElement('div');
+            dust.className = 'dust-particle';
+            dust.style.left = (horse.position - 5) + 'px';
+            dust.style.top = (25 + Math.random() * 15) + 'px';
+            track.appendChild(dust);
+            setTimeout(() => dust.remove(), 500);
+        }
+
+        // 부스트 이펙트
+        function createBoostEffect(horse) {
+            const track = horse.element.parentElement;
+            const effect = document.createElement('div');
+            effect.className = 'boost-effect';
+            effect.textContent = '⚡';
+            effect.style.left = horse.position + 'px';
+            effect.style.top = '5px';
+            track.appendChild(effect);
+            playSound('boost');
+            setTimeout(() => effect.remove(), 400);
+        }
+
+        // 추월 팝업
+        function showOvertakePopup(horse) {
+            const popup = document.createElement('div');
+            popup.className = 'overtake-popup';
+            popup.textContent = `${horse.name} 추월! 🔥`;
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 600);
+        }
+
+        // Confetti
+        function createConfetti() {
+            const colors = ['#FFD700', '#ff0', '#f0f', '#0ff', '#f00', '#0f0'];
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 8 + 4) + 'px';
+                    confetti.style.height = (Math.random() * 8 + 4) + 'px';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 15);
+            }
+        }
+
+        // 순위 계산
+        function calculateRankings() {
+            const trackWidth = horses[0].element.parentElement.offsetWidth;
+            const finishLine = trackWidth * 0.85;
+            
+            return horses
+                .map(horse => ({
+                    ...horse,
+                    progress: Math.min(100, (horse.position / finishLine) * 100)
+                }))
+                .sort((a, b) => b.progress - a.progress);
+        }
+
+        // 속도 계산
+        function calculateSpeed(horse, raceProgress) {
+            let baseSpeed = 2 + (horse.stats.speed * 0.3);
+            
+            if (raceProgress > 0.5) {
+                const fatigueEffect = (10 - horse.stats.stamina) * 0.05;
+                const fatigueMultiplier = 1 - (fatigueEffect * (raceProgress - 0.5) * 2);
+                baseSpeed *= Math.max(0.5, fatigueMultiplier);
+            }
+            
+            let boosted = false;
+            if (Math.random() * 100 < horse.stats.luck * 1.5) {
+                baseSpeed += Math.random() * 3 + 2;
+                boosted = true;
+            }
+            
+            if (boosted && horse.element) {
+                horse.element.classList.add('boosted');
+                createBoostEffect(horse);
+                setTimeout(() => horse.element.classList.remove('boosted'), 300);
+            }
+            
+            return baseSpeed + (Math.random() * 1.5);
+        }
+
+        // 경기 시작
+        function startRace() {
+            initAudio();
+            raceFinished = false;
+            slowMotionActive = false;
+            previousLeader = null;
+            winnerHorse = null;
+
+            // 포인트 차감
+            bets.forEach(bet => {
+                players[bet.nickname].points -= bet.amount;
+            });
+            savePlayers();
+
+            bettingPanel.style.display = 'none';
+            raceContainer.classList.add('active');
+            createRaceTrack();
+
+            horses.forEach((horse, index) => {
+                horse.position = 0;
+                horse.previousRank = index + 1;
+                horse.element.style.left = '0px';
+                horse.element.classList.remove('winner');
+            });
+
+            dustInterval = setInterval(() => {
+                horses.forEach(horse => createDustParticles(horse));
+            }, 80);
+
+            raceInterval = setInterval(moveHorses, 50);
+        }
+
+        // 말 이동
+        function moveHorses() {
+            if (raceFinished) return;
+
+            const rankings = calculateRankings();
+            const leader = rankings[0];
+
+            // 추월 감지
+            if (previousLeader && previousLeader !== leader.id && leader.progress > 15) {
+                showOvertakePopup(leader);
+            }
+            previousLeader = leader.id;
+
+            // 결승선 근처 화면 흔들림
+            if (leader.progress > 85) {
+                raceContainer.classList.add('shaking');
+            }
+
+            // 슬로우 모션
+            if (leader.progress > 90 && !slowMotionActive) {
+                slowMotionActive = true;
+                clearInterval(raceInterval);
+                raceInterval = setInterval(moveHorses, 80);
+            }
+
+            horses.forEach(horse => {
+                const trackWidth = horse.element.parentElement.offsetWidth;
+                const finishLine = trackWidth * 0.85;
+                const raceProgress = horse.position / finishLine;
+                
+                const speed = calculateSpeed(horse, raceProgress);
+                horse.position += speed;
+                horse.element.style.left = horse.position + 'px';
+
+                if (horse.position >= finishLine && !raceFinished) {
+                    raceFinished = true;
+                    winnerHorse = horse;
+                    clearInterval(raceInterval);
+                    clearInterval(dustInterval);
+                    raceContainer.classList.remove('shaking');
+                    
+                    horse.element.classList.add('winner');
+                    playSound('winner');
+                    createConfetti();
+                    
+                    setTimeout(showResults, 800);
+                }
+            });
+        }
+
+        // 결과 표시
+        function showResults() {
+            document.getElementById('resultWinnerName').textContent = winnerHorse.name;
+            document.getElementById('winnerInfo').style.backgroundColor = winnerHorse.color + '33';
+
+            const resultsHtml = bets.map(bet => {
+                const horse = horses.find(h => h.id === bet.horseId);
+                const isWin = bet.horseId === winnerHorse.id;
+                const pointChange = isWin ? Math.floor(bet.amount * horse.odds) : 0;
+
+                if (isWin) {
+                    players[bet.nickname].points += pointChange;
+                }
+
+                return `
+                    <tr class="${isWin ? 'win' : 'lose'}">
+                        <td>${bet.nickname}</td>
+                        <td style="color: ${horse.color};">${horse.name}</td>
+                        <td class="${isWin ? 'win-text' : 'lose-text'}">${isWin ? '🎉 적중!' : '😢 아쉽네요'}</td>
+                        <td class="${isWin ? 'points-gain' : 'points-loss'}">${isWin ? '+' + pointChange : '-' + bet.amount}P</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('resultTableBody').innerHTML = resultsHtml;
+            savePlayers();
+            resultOverlay.classList.add('show');
+        }
+
+        // 다음 경기
+        function nextRace() {
+            resultOverlay.classList.remove('show');
+            raceContainer.classList.remove('active');
+            bettingPanel.style.display = 'block';
+            bets = [];
+
+            // 새 스탯 생성
+            initializeHorses();
+            createHorseCards();
+            updateBetList();
+        }
+
+        // 이벤트 리스너
+        addBetBtn.addEventListener('click', addBet);
+        startRaceBtn.addEventListener('click', startRace);
+        nextRaceBtn.addEventListener('click', nextRace);
+        horseSelect.addEventListener('change', (e) => {
+            document.querySelectorAll('.horse-card').forEach(card => card.classList.remove('selected'));
+            if (e.target.value) {
+                document.querySelector(`[data-horse-id="${e.target.value}"]`).classList.add('selected');
+            }
+        });
+
+        // 초기화
+        loadPlayers();
+        initializeHorses();
+        createHorseCards();
+        updateBetList();
+    </script>
+</body>
+</html>
